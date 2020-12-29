@@ -37,6 +37,7 @@ function runTracker() {
           "Delete a Department",
           "Delete a Role",
           "Delete an Employee",
+          "Update Employee Role",
           "Exit",
         ],
       },
@@ -69,6 +70,9 @@ function runTracker() {
           break;
         case "Delete an Employee":
           deleteEmployee();
+          break;
+        case "Update Employee Role":
+          updateEmployeeRole();
           break;
         case "Exit":
           exit();
@@ -382,6 +386,77 @@ function deleteEmployee() {
         });
       });
   });
+}
+
+// Update Employee Role Section
+
+function updateEmployeeRole() {
+  let newRole = {};
+
+  connection.query(
+    "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, e2.first_name AS manager FROM employee LEFT JOIN employee AS e2 ON e2.id = employee.manager_id JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY employee.id",
+    (err, res) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: "updateEmployee",
+            type: "list",
+            message: "Which employee would you like to update?",
+            choices: function () {
+              let choiceArray = [];
+              for (var i = 0; i < res.length; i++) {
+                choiceArray.push(res[i].first_name);
+              }
+              return choiceArray;
+            },
+          },
+        ])
+        .then(function (userInput) {
+          newRole.first_name = userInput.updateEmployee;
+
+          connection.query("SELECT * FROM role", (err, res) => {
+            if (err) throw err;
+            inquirer
+              .prompt([
+                {
+                  name: "updateRole",
+                  type: "list",
+                  message:
+                    "What would you like you to change their role title to?",
+                  choices: function () {
+                    let choiceArray = [];
+                    for (var i = 0; i < res.length; i++) {
+                      choiceArray.push(res[i].title);
+                    }
+                    return choiceArray;
+                  },
+                },
+              ])
+              .then(function (userInput) {
+                connection.query(
+                  "SELECT * FROM role WHERE title = ?",
+                  userInput.updateRole,
+                  (err, res) => {
+                    if (err) throw err;
+
+                    newRole.role_id = res[0].id;
+
+                    connection.query(
+                      "UPDATE employee SET role_id = ? WHERE first_name = ?",
+                      [newRole.role_id, newRole.first_name],
+                      (err, res) => {
+                        if (err) throw err;
+                        runTracker();
+                      }
+                    );
+                  }
+                );
+              });
+          });
+        });
+    }
+  );
 }
 
 // Exit/Quit Section
