@@ -21,7 +21,7 @@ connection.connect(function (err) {
 
 connection.query = util.promisify(connection.query);
 
-function userOptions() {
+function runTracker() {
   inquirer
     .prompt([
       {
@@ -66,7 +66,130 @@ function userOptions() {
         case "Exit":
           exit();
         default:
-          console.log("Have a great day!");
+          console.log("Hope you have a wonderful day!");
       }
     });
 }
+
+// Add Department Section
+
+// Add Role Section
+
+// Add Employee Section
+
+const addEmployee = () => {
+  console.log("Adding a new employee.");
+  let addNewEmployee = {};
+  connection.query("SELECT * FROM role", (err, res) => {
+    if (err) throw err;
+    console.log(res);
+    const departmentChoices = res.map((row) => ({
+      value: row.id,
+      name: row.name,
+    }));
+
+    return inquirer
+      .prompt([
+        {
+          type: "input",
+          name: "first_name",
+          message: "What is the employee's first name?",
+        },
+        {
+          type: "input",
+          name: "last_name",
+          message: "What is the employee's last name?",
+        },
+        {
+          type: "list",
+          name: "allRoles",
+          message: "What is the employee's role?",
+          choices: function () {
+            let rolesArray = [];
+            for (let i = 0; i < res.length; i++) {
+              rolesArray.push(res[i].title);
+            }
+            return rolesArray;
+          },
+        },
+        {
+          type: "list",
+          name: "whichDepartment",
+          message: "What department is the employee in?",
+          choices: departmentChoices,
+        },
+      ])
+      .then((response) => {
+        {
+          addNewEmployee.first_name = response.first_name;
+          addNewEmployee.last_name = response.last_name;
+          connection.query(
+            `SELECT * FROM role WHERE title = ?`,
+            response.allRoles,
+            (err, res) => {
+              if (err) throw err;
+              addNewEmployee.role_id = res[0].id;
+            }
+          );
+
+          connection.query("SELECT * FROM employee", (err, res) => {
+            if (err) throw err;
+            inquirer
+              .prompt([
+                {
+                  type: "list",
+                  name: "manager_name",
+                  message: "Who is the employee's manager?",
+                  choices: function () {
+                    let managerArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                      managerArray.push(res[i].first_name);
+                    }
+                    return managerArray;
+                  },
+                },
+              ])
+              .then(
+                (response) => {
+                  connection.query(
+                    "SELECT id FROM employee WHERE first_name = ?",
+                    response.manager_name,
+                    (err, res) => {
+                      if (err) throw err;
+                      addNewEmployee.manager_id = res[0].id;
+
+                      connection.query(
+                        "INSERT INTO employee SET ?",
+                        addNewEmployee,
+                        (err, res) => {
+                          if (err) throw err;
+                          runTracker();
+                        }
+                      );
+                    }
+                  );
+                },
+                function (err, res) {
+                  if (err) throw err;
+                  console.log("New employee added!");
+                }
+              );
+            runTracker();
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  });
+};
+
+// View Department Section
+
+// View Role Section
+
+// View Employee Section
+
+// Update Employee Section
+
+// Exit/Quit Section
