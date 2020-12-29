@@ -73,7 +73,75 @@ function runTracker() {
 
 // Add Department Section
 
+const addDepartment = () => {
+  console.log("add department here");
+  inquirer
+    .prompt({
+      name: "department",
+      message: "What Department would you like to add?",
+      type: "input",
+    })
+    .then(({ department }) => {
+      connection.query(
+        `INSERT INTO department SET ?`,
+        {
+          name: department,
+        },
+        (err) => {
+          if (err) throw err;
+          console.log(`New Department: ${department} was added!`);
+          viewDepartments();
+        }
+      );
+    });
+};
+
 // Add Role Section
+
+function addRole() {
+  connection.query("SELECT * FROM department", (err, res) => {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          name: "title",
+          type: "input",
+          message: "What is the role's title?",
+        },
+        {
+          name: "salary",
+          type: "input",
+          message: "What is the role's salary?",
+        },
+        {
+          name: "deptName",
+          type: "list",
+          message: "What department does this role belong to?",
+          choices: function () {
+            let choiceArray = [];
+            for (let i = 0; i < res.length; i++) {
+              choiceArray.push({ name: res[i].name, value: res[i].id });
+            }
+            return choiceArray;
+          },
+        },
+      ])
+      .then((userInput) => {
+        connection.query(
+          "INSERT INTO role SET ?",
+          {
+            title: userInput.title,
+            salary: userInput.salary,
+            department_id: userInput.deptName,
+          },
+          function (err, res) {
+            if (err) throw err;
+            runTracker();
+          }
+        );
+      });
+  });
+}
 
 // Add Employee Section
 
