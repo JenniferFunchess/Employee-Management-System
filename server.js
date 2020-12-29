@@ -15,8 +15,7 @@ const connection = mysql.createConnection({
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id " + connection.threadId);
-
-  manageEmployees();
+  runTracker();
 });
 
 connection.query = util.promisify(connection.query);
@@ -43,7 +42,7 @@ function runTracker() {
     .then(({ selection }) => {
       switch (selection) {
         case "Add a new Department":
-          addDept();
+          addDepartment();
           break;
         case "Add a new Role":
           addRole();
@@ -52,7 +51,7 @@ function runTracker() {
           addEmployee();
           break;
         case "View All Departments":
-          viewAllDept();
+          viewDepartments();
           break;
         case "View All Roles":
           viewRoles();
@@ -254,10 +253,42 @@ const addEmployee = () => {
 
 // View Department Section
 
+viewDepartments = () => {
+  console.log("View all departments.");
+  connection.query(`SELECT * FROM department`, (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    console.log("-----------------");
+    runTracker();
+  });
+};
+
 // View Role Section
 
+viewRoles = () => {
+  console.log("View all roles.");
+  connection.query(`SELECT * FROM role`, (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    console.log("-----------------");
+    runTracker();
+  });
+};
+
 // View Employee Section
+
+const viewEmployees = () => {
+  connection.query("select * from employee;", (err, res) => {
+    console.table(res);
+    console.log("-----------------");
+    runTracker();
+  });
+};
 
 // Update Employee Section
 
 // Exit/Quit Section
+
+function exit() {
+  connection.end();
+}
